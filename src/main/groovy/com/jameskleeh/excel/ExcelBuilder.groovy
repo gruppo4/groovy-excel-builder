@@ -19,7 +19,7 @@ under the License.
 package com.jameskleeh.excel
 
 import groovy.transform.CompileStatic
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.xssf.streaming.SXSSFWorkbook
 
 /**
  * The main class used to start building an excel document
@@ -37,18 +37,20 @@ class ExcelBuilder {
      * @param callable The closure to build the document
      */
     static void output(OutputStream outputStream, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Workbook) Closure callable) {
-        XSSFWorkbook wb = build(callable)
+        SXSSFWorkbook wb = build(callable)
         wb.write(outputStream)
+        wb.dispose()
     }
 
     /**
      * Builds an excel document
      *
      * @param callable The closure to build the document
-     * @return The native workbook
+     * @return The native workbook, which MUST be disposed of using its dispose() method.
      */
-    static XSSFWorkbook build(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Workbook) Closure callable) {
-        XSSFWorkbook wb = new XSSFWorkbook()
+    static SXSSFWorkbook build(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Workbook) Closure callable) {
+        SXSSFWorkbook wb = new SXSSFWorkbook()
+        wb.compressTempFiles = true
         callable.resolveStrategy = Closure.DELEGATE_FIRST
         callable.delegate = new Workbook(wb)
         if (callable.maximumNumberOfParameters == 1) {

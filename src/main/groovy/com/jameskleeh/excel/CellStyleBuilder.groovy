@@ -28,12 +28,12 @@ import org.apache.poi.ss.usermodel.FillPatternType
 import org.apache.poi.ss.usermodel.Font as FontType
 import org.apache.poi.ss.usermodel.HorizontalAlignment
 import org.apache.poi.ss.usermodel.VerticalAlignment
-import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.streaming.SXSSFCell
 import org.apache.poi.xssf.usermodel.XSSFCellStyle
 import org.apache.poi.xssf.usermodel.XSSFColor
 import org.apache.poi.xssf.usermodel.XSSFFont
-import org.apache.poi.xssf.usermodel.XSSFRow
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.xssf.streaming.SXSSFRow
+import org.apache.poi.xssf.streaming.SXSSFWorkbook
 import org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder.BorderSide
 import java.awt.Color
 
@@ -46,9 +46,9 @@ import java.awt.Color
 @CompileStatic
 class CellStyleBuilder {
 
-    XSSFWorkbook workbook
+    SXSSFWorkbook workbook
 
-    private static final Map<XSSFWorkbook, WorkbookCache> WORKBOOK_CACHE = [:]
+    private static final Map<SXSSFWorkbook, WorkbookCache> WORKBOOK_CACHE = [:]
     protected static final String FORMAT = 'format'
     protected static final String HIDDEN = 'hidden'
     protected static final String LOCKED = 'locked'
@@ -76,7 +76,7 @@ class CellStyleBuilder {
     protected static final String BACKGROUND_COLOR = 'backgroundColor'
     protected static final String FOREGROUND_COLOR = 'foregroundColor'
 
-    CellStyleBuilder(XSSFWorkbook workbook) {
+    CellStyleBuilder(SXSSFWorkbook workbook) {
         this.workbook = workbook
         if (!WORKBOOK_CACHE.containsKey(workbook)) {
             WORKBOOK_CACHE.put(workbook, new WorkbookCache(workbook))
@@ -148,7 +148,7 @@ class CellStyleBuilder {
         WorkbookCache workbookCache = WORKBOOK_CACHE.get(workbook)
 
         if (!workbookCache.containsFont(fontOptions)) {
-            XSSFFont font = workbook.createFont()
+            XSSFFont font = (XSSFFont) workbook.createFont()
             if (fontOptions instanceof Map) {
                 Map fontMap = (Map)fontOptions
                 setBooleanFont(fontMap, FONT_BOLD, font.&setBold)
@@ -353,7 +353,7 @@ class CellStyleBuilder {
      * @return A cell style to apply
      */
      XSSFCellStyle buildStyle(Object value, Map options) {
-        XSSFCellStyle cellStyle = workbook.createCellStyle()
+        XSSFCellStyle cellStyle = (XSSFCellStyle) workbook.createCellStyle()
         if (options.containsKey(FORMAT)) {
             setFormat(cellStyle, options[FORMAT])
         }
@@ -428,7 +428,7 @@ class CellStyleBuilder {
      * @param _options A map of options for styling
      * @param defaultOptions A map of default options for styling
      */
-     void setStyle(Object value, XSSFCell cell, Map options, Map defaultOptions = null) {
+     void setStyle(Object value, SXSSFCell cell, Map options, Map defaultOptions = null) {
          XSSFCellStyle cellStyle = getStyle(value, options, defaultOptions)
          if (cellStyle != null) {
              cell.cellStyle = cellStyle
@@ -442,7 +442,7 @@ class CellStyleBuilder {
      * @param _options A map of options for styling
      * @param defaultOptions A map of default options for styling
      */
-    void setStyle(XSSFRow row, Map options, Map defaultOptions = null) {
+    void setStyle(SXSSFRow row, Map options, Map defaultOptions = null) {
         XSSFCellStyle cellStyle = getStyle(null, options, defaultOptions)
         if (cellStyle != null) {
             row.setRowStyle(cellStyle)
@@ -476,5 +476,5 @@ class CellStyleBuilder {
         setBorder(borderStyleApplier, border)
         borderStyleApplier.setStyles()
     }
-    
+
 }

@@ -27,10 +27,10 @@ import groovy.transform.CompileStatic
 import org.apache.poi.common.usermodel.Hyperlink
 import org.apache.poi.common.usermodel.HyperlinkType
 import org.apache.poi.ss.util.CellRangeAddress
-import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.streaming.SXSSFCell
 import org.apache.poi.xssf.usermodel.XSSFHyperlink
-import org.apache.poi.xssf.usermodel.XSSFSheet
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.xssf.streaming.SXSSFSheet
+import org.apache.poi.xssf.streaming.SXSSFWorkbook
 
 import java.awt.Color
 
@@ -42,14 +42,14 @@ import java.awt.Color
 @CompileStatic
 abstract class CreatesCells {
 
-    protected final XSSFWorkbook workbook
-    protected final XSSFSheet sheet
+    protected final SXSSFWorkbook workbook
+    protected final SXSSFSheet sheet
     protected Map defaultOptions
     protected final Map<Object, Integer> columnIndexes
     protected final CellStyleBuilder styleBuilder
     protected static final Map LINK_OPTIONS = [font: [style: Font.UNDERLINE, color: Color.BLUE]]
 
-    CreatesCells(XSSFSheet sheet, Map defaultOptions, Map<Object, Integer> columnIndexes, CellStyleBuilder styleBuilder) {
+    CreatesCells(SXSSFSheet sheet, Map defaultOptions, Map<Object, Integer> columnIndexes, CellStyleBuilder styleBuilder) {
         this.workbook = sheet.workbook
         this.sheet = sheet
         this.defaultOptions = defaultOptions
@@ -72,7 +72,7 @@ abstract class CreatesCells {
         }
     }
 
-    protected abstract XSSFCell nextCell()
+    protected abstract SXSSFCell nextCell()
 
     /**
      * Skips cells
@@ -81,7 +81,7 @@ abstract class CreatesCells {
      */
     abstract void skipCells(int num)
 
-    protected void setStyle(Object value, XSSFCell cell, Map options) {
+    protected void setStyle(Object value, SXSSFCell cell, Map options) {
         styleBuilder.setStyle(value, cell, options, defaultOptions)
     }
 
@@ -93,8 +93,8 @@ abstract class CreatesCells {
      * @param style The cell style
      * @return The native cell
      */
-    XSSFCell column(String value, Object id, final Map style = null) {
-        XSSFCell col = cell(value, style)
+    SXSSFCell column(String value, Object id, final Map style = null) {
+        SXSSFCell col = cell(value, style)
         columnIndexes[id] = col.columnIndex
         col
     }
@@ -106,8 +106,8 @@ abstract class CreatesCells {
      * @param style The cell style
      * @return The native cell
      */
-    XSSFCell formula(String formulaString, final Map style) {
-        XSSFCell cell = nextCell()
+    SXSSFCell formula(String formulaString, final Map style) {
+        SXSSFCell cell = nextCell()
         if (formulaString.startsWith('=')) {
             formulaString = formulaString[1..-1]
         }
@@ -122,7 +122,7 @@ abstract class CreatesCells {
      * @param formulaString The formula
      * @return The native cell
      */
-    XSSFCell formula(String formulaString) {
+    SXSSFCell formula(String formulaString) {
         formula(formulaString, null)
     }
 
@@ -132,7 +132,7 @@ abstract class CreatesCells {
      * @param callable The return value will be assigned to the cell formula. The closure delegate contains helper methods to get references to other cells.
      * @return The native cell
      */
-    XSSFCell formula(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+    SXSSFCell formula(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
         formula(null, callable)
     }
 
@@ -143,8 +143,8 @@ abstract class CreatesCells {
      * @param callable The return value will be assigned to the cell formula. The closure delegate contains helper methods to get references to other cells.
      * @return The native cell
      */
-    XSSFCell formula(final Map style, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
-        XSSFCell cell = nextCell()
+    SXSSFCell formula(final Map style, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+        SXSSFCell cell = nextCell()
         callable.resolveStrategy = Closure.DELEGATE_FIRST
         callable.delegate = new CellFinder(cell, columnIndexes)
         String formula
@@ -166,7 +166,7 @@ abstract class CreatesCells {
      *
      * @return The native cell
      */
-    XSSFCell cell() {
+    SXSSFCell cell() {
         cell(null)
     }
 
@@ -176,7 +176,7 @@ abstract class CreatesCells {
      * @param value The value to assign
      * @return The native cell
      */
-    XSSFCell cell(Object value) {
+    SXSSFCell cell(Object value) {
         cell(value, null)
     }
 
@@ -187,8 +187,8 @@ abstract class CreatesCells {
      * @param style The cell style options
      * @return The native cell
      */
-    XSSFCell cell(Object value, final Map style) {
-        XSSFCell cell = nextCell()
+    SXSSFCell cell(Object value, final Map style) {
+        SXSSFCell cell = nextCell()
         setStyle(value, cell, style)
         if (value == null) {
             return cell
@@ -213,8 +213,8 @@ abstract class CreatesCells {
         cell
     }
 
-    protected XSSFCell handleLink(XSSFCell cell, String address, HyperlinkType linkType) {
-        XSSFHyperlink link = workbook.creationHelper.createHyperlink(linkType)
+    protected SXSSFCell handleLink(SXSSFCell cell, String address, HyperlinkType linkType) {
+        XSSFHyperlink link = (XSSFHyperlink) workbook.creationHelper.createHyperlink(linkType)
         link.address = address
         cell.hyperlink = link
         cell
@@ -231,7 +231,7 @@ abstract class CreatesCells {
      * @deprecated Use {@link #link(Object, String, HyperlinkType}
      */
     @Deprecated
-    XSSFCell link(Object value, String address, int linkType) {
+    SXSSFCell link(Object value, String address, int linkType) {
         link(value, address, HyperlinkType.forInt(linkType))
     }
 
@@ -243,8 +243,8 @@ abstract class CreatesCells {
      * @param linkType The type of link. One of {@link HyperlinkType#URL}, {@link HyperlinkType#EMAIL}, {@link HyperlinkType#FILE}
      * @return The native cell
      */
-    XSSFCell link(Object value, String address, HyperlinkType linkType) {
-        XSSFCell cell = cell(value, LINK_OPTIONS)
+    SXSSFCell link(Object value, String address, HyperlinkType linkType) {
+        SXSSFCell cell = cell(value, LINK_OPTIONS)
         handleLink(cell, address, linkType)
     }
 
@@ -255,8 +255,8 @@ abstract class CreatesCells {
      * @param callable The closure to build the link
      * @return The native cell
      */
-    XSSFCell link(Object value, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
-        XSSFCell cell = cell(value, LINK_OPTIONS)
+    SXSSFCell link(Object value, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+        SXSSFCell cell = cell(value, LINK_OPTIONS)
         callable.resolveStrategy = Closure.DELEGATE_FIRST
         callable.delegate = new CellFinder(cell, columnIndexes)
         handleLink(cell, callable.call().toString(), HyperlinkType.DOCUMENT)
@@ -323,6 +323,6 @@ abstract class CreatesCells {
 
     protected abstract int getMergeIndex()
 
-    protected abstract CellRangeBorderStyleApplier getBorderStyleApplier(CellRangeAddress range, XSSFSheet sheet)
+    protected abstract CellRangeBorderStyleApplier getBorderStyleApplier(CellRangeAddress range, SXSSFSheet sheet)
 
 }
